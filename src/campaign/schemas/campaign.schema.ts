@@ -26,7 +26,7 @@ export class Campaign {
   @Prop()
   endDate: Date;
 
-  @Prop({ type: campaignStatus, default: campaignStatus.ACTIVE })
+  @Prop({ enum: campaignStatus, type: String, default: campaignStatus.ACTIVE })
   status: campaignStatus;
 
   @Prop({ type: [CommentSchema] })

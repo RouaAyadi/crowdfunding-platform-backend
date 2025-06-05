@@ -6,10 +6,12 @@ import { AuthModule } from './auth/auth.module';
 import { StartupModule } from './startup/startup.module';
 import { CampaignModule } from './campaign/campaign.module';
 import { InvestorModule } from './investor/investor.module';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
   imports: [
     MongooseModule.forRoot('mongodb://127.0.0.1:27017/crowdfunding-platform'),
+    ConfigModule.forRoot({ isGlobal: true }),
     AuthModule,
     StartupModule,
     CampaignModule,
