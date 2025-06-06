@@ -1,5 +1,7 @@
 export enum campaignStatus {
-  ACTIVE,
-  FUNDED,
-  FAILED,
+  ACTIVE = 'active',
+  COMPLETED = 'completed',
+  FUNDED = 'funded',
+  FAILED = 'failed',
+  DRAFT = 'draft',
 }
