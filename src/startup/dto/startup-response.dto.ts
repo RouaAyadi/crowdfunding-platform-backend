@@ -5,6 +5,7 @@ import { SocialLinks, KeyMetric, Milestone } from '../interfaces/startup.interfa
 
 export class StartupResponseDto {
   @Expose()
+  @Transform(({ obj }) => obj._id?.toString() || obj.id?.toString())
   id: string;
 
   @Expose()

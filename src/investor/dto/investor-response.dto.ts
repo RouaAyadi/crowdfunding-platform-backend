@@ -3,6 +3,7 @@ import { Campaign } from '../../campaign/schemas/campaign.schema';
 
 export class InvestorResponseDto {
   @Expose()
+  @Transform(({ obj }) => obj._id?.toString() || obj.id?.toString())
   id: string;
 
   @Expose()
