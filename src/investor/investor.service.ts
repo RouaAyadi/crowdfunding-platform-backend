@@ -6,6 +6,9 @@ import { plainToClass } from 'class-transformer';
 import { InvestorResponseDto } from './dto/investor-response.dto';
 import { AddInvestmentDto } from './dto/add-investment.dto';
 import { Campaign } from '../campaign/schemas/campaign.schema';
+import { InvestorDashboardDto } from './dto/investor-dashboard.dto';
+import { Startup } from '../startup/schemas/startup.schema';
+import { campaignStatus } from '../campaign/campaign-status.enum';
 
 @Injectable()
 export class InvestorService {
@@ -148,5 +151,59 @@ export class InvestorService {
     return plainToClass(InvestorResponseDto, updatedInvestor.toObject(), { 
       excludeExtraneousValues: true 
     });
+  }
+
+  async getDashboard(walletAddress: string): Promise<InvestorDashboardDto> {
+    // Find investor and populate their investments
+    const investor = await this.investorModel
+      .findOne({ walletAddress: walletAddress.toLowerCase() })
+      .exec();
+
+    if (!investor) {
+      throw new NotFoundException('Investor not found');
+    }
+
+    // Get all campaigns this investor has invested in
+    const investedCampaigns = await this.campaignModel
+      .find({ _id: { $in: investor.investments } })
+      .populate<{ startup: Startup & { _id: Types.ObjectId } }>('startup')
+      .exec();
+
+    // Calculate total invested and successful startups
+    const totalInvested = investedCampaigns.reduce((sum, campaign) => sum + campaign.currentAmount, 0);
+    const successfulStartups = investedCampaigns.filter(campaign => campaign.status === campaignStatus.COMPLETED).length;
+
+    // Transform campaigns to match frontend format
+    const transformedCampaigns = investedCampaigns.map(campaign => {
+      const endDate = new Date(campaign.endDate);
+      const now = new Date();
+      const daysLeft = Math.max(0, Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+
+      return {
+        id: campaign._id.toString(),
+        title: campaign.title,
+        name: campaign.title, // Using title as name since Campaign doesn't have a separate name field
+        description: campaign.description,
+        goalAmount: campaign.targetAmount,
+        amountRaised: campaign.currentAmount,
+        currentState: campaign.status,
+        tags: campaign.tags || [],
+        image: campaign.image || '',
+        startupId: campaign.startup._id.toString(),
+        startupName: campaign.startup.name,
+        endDate: campaign.endDate.toISOString().split('T')[0],
+        backers: campaign.backers,
+        daysLeft
+      };
+    });
+
+    return {
+      name: investor.name,
+      walletAddress: investor.walletAddress,
+      totalInvested,
+      totalCampaigns: investedCampaigns.length,
+      successfulStartups,
+      investedCampaigns: transformedCampaigns
+    };
   }
 }

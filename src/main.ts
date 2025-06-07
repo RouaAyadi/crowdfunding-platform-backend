@@ -16,7 +16,7 @@ async function bootstrap() {
 
   app.enableCors({
     origin: 'http://localhost:3000', // allow frontend origin
-    credentials: true, // if you're using cookies or auth headers
+    credentials: "*", // if you're using cookies or auth headers
   });
 
   await app.listen(process.env.PORT ?? 3300);

@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { StartupDocument, Startup } from './schemas/startup.schema';
 import { Campaign } from '../campaign/schemas/campaign.schema';
 import { UpdateStartupDto } from './dto/update-startup.dto';
@@ -15,11 +15,20 @@ export class StartupService {
     @InjectModel(Campaign.name) private campaignModel: Model<Campaign>,
   ) {}
 
+  private validateObjectId(id: string): void {
+    if (!Types.ObjectId.isValid(id)) {
+      throw new BadRequestException(`Invalid ID format: ${id}`);
+    }
+  }
+
   async findAll(): Promise<StartupResponseDto[]> {
     const startups = await this.startupModel
       .find()
       .populate('campaigns')
-      .populate('reviews')
+      .populate({
+        path: 'reviews.reviewer',
+        select: 'name avatar'
+      })
       .exec();
 
     return startups.map(startup =>
@@ -30,10 +39,15 @@ export class StartupService {
   }
 
   async findOne(id: string): Promise<StartupResponseDto> {
+    this.validateObjectId(id);
+
     const startup = await this.startupModel
       .findById(id)
       .populate('campaigns')
-      .populate('reviews')
+      .populate({
+        path: 'reviews.reviewer',
+        select: 'name avatar'
+      })
       .exec();
 
     if (!startup) {
@@ -49,7 +63,10 @@ export class StartupService {
     const startup = await this.startupModel
       .findOne({ walletAddress: walletAddress.toLowerCase() })
       .populate('campaigns')
-      .populate('reviews')
+      .populate({
+        path: 'reviews.reviewer',
+        select: 'name avatar'
+      })
       .exec();
 
     if (!startup) {
@@ -62,6 +79,8 @@ export class StartupService {
   }
 
   async update(id: string, updateStartupDto: UpdateStartupDto, userId: string): Promise<StartupResponseDto> {
+    this.validateObjectId(id);
+
     const startup = await this.startupModel.findById(id);
     
     if (!startup) {
@@ -76,7 +95,10 @@ export class StartupService {
     const updatedStartup = await this.startupModel
       .findByIdAndUpdate(id, updateStartupDto, { new: true })
       .populate('campaigns')
-      .populate('reviews')
+      .populate({
+        path: 'reviews.reviewer',
+        select: 'name avatar'
+      })
       .exec();
 
     if (!updatedStartup) {
@@ -89,6 +111,8 @@ export class StartupService {
   }
 
   async getDashboardStats(id: string): Promise<any> {
+    this.validateObjectId(id);
+
     const startup = await this.startupModel
       .findById(id)
       .populate({
@@ -146,6 +170,8 @@ export class StartupService {
   }
 
   async getStartupCampaigns(id: string, status?: string): Promise<Campaign[]> {
+    this.validateObjectId(id);
+
     const query = this.campaignModel.find({ startup: id });
     
     if (status) {
@@ -156,6 +182,8 @@ export class StartupService {
   }
 
   async launchCampaign(startupId: string, launchCampaignDto: LaunchCampaignDto): Promise<Campaign> {
+    this.validateObjectId(startupId);
+
     const startup = await this.startupModel.findById(startupId);
     if (!startup) {
       throw new NotFoundException('Startup not found');
