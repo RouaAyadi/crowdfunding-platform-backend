@@ -21,7 +21,7 @@ export class UserService {
 
   async findByWallet(
     walletAddress: string,
-    role?: Roles,
+    role: Roles,
   ): Promise<UserDocument | null> {
     switch (role) {
       case Roles.INVESTOR:

@@ -1,4 +1,15 @@
-import { Controller, Get, Post, Patch, Param, Body, UseGuards, Request, Query, ForbiddenException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Param,
+  Body,
+  UseGuards,
+  Request,
+  Query,
+  ForbiddenException,
+} from '@nestjs/common';
 import { StartupService } from './startup.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { StartupResponseDto } from './dto/startup-response.dto';
@@ -6,9 +17,11 @@ import { UpdateStartupDto } from './dto/update-startup.dto';
 import { LaunchCampaignDto } from './dto/launch-campaign.dto';
 import { Roles } from '../auth/roles.enum';
 import { HasRoles } from '../auth/decorators/roles.decorator';
+import { ApiBearerAuth } from '@nestjs/swagger';
 
 @Controller('startups')
 @UseGuards(JwtAuthGuard)
+@ApiBearerAuth()
 export class StartupController {
   constructor(private readonly startupService: StartupService) {}
 
@@ -23,7 +36,9 @@ export class StartupController {
   }
 
   @Get('wallet/:address')
-  async findByWalletAddress(@Param('address') address: string): Promise<StartupResponseDto> {
+  async findByWalletAddress(
+    @Param('address') address: string,
+  ): Promise<StartupResponseDto> {
     return this.startupService.findByWalletAddress(address);
   }
 
@@ -32,7 +47,7 @@ export class StartupController {
   async update(
     @Param('id') id: string,
     @Body() updateStartupDto: UpdateStartupDto,
-    @Request() req
+    @Request() req,
   ): Promise<StartupResponseDto> {
     return this.startupService.update(id, updateStartupDto, req.user.userId);
   }
@@ -46,7 +61,7 @@ export class StartupController {
   @Get(':id/campaigns')
   async getStartupCampaigns(
     @Param('id') id: string,
-    @Query('status') status?: string
+    @Query('status') status?: string,
   ) {
     return this.startupService.getStartupCampaigns(id, status);
   }
@@ -56,10 +71,12 @@ export class StartupController {
   async launchCampaign(
     @Param('id') id: string,
     @Body() launchCampaignDto: LaunchCampaignDto,
-    @Request() req
+    @Request() req,
   ) {
     if (id !== req.user.userId) {
-      throw new ForbiddenException('You can only launch campaigns for your own startup');
+      throw new ForbiddenException(
+        'You can only launch campaigns for your own startup',
+      );
     }
     return this.startupService.launchCampaign(id, launchCampaignDto);
   }
