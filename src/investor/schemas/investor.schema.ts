@@ -7,6 +7,9 @@ export type InvestorDocument = Investor & Document;
 
 @Schema()
 export class Investor extends User {
+  @Prop({ required: true })
+  name: string;
+
   @Prop()
   nickname?: string;
 
