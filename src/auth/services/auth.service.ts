@@ -11,6 +11,7 @@ import { User } from '../schemas/user.schema';
 import { Model } from 'mongoose';
 import { UserService } from './user.service';
 import { LoginDto, RegisterDto } from '../dto/auth.dto';
+import { Roles } from '../roles.enum';
 
 @Injectable()
 export class AuthService {
@@ -19,9 +20,13 @@ export class AuthService {
     private readonly userService: UserService,
   ) {}
 
-  async generateNonce(walletAddress: string) {
+  async generateNonce(walletAddress: string, role: Roles) {
     const nonce = randomUUID();
-    await this.userService.updateNonce(walletAddress.toLowerCase(), nonce);
+    await this.userService.updateNonce(
+      walletAddress.toLowerCase(),
+      nonce,
+      role,
+    );
     return { nonce };
   }
 
@@ -29,7 +34,10 @@ export class AuthService {
     const walletAddress = dto.walletAddress.toLowerCase();
 
     // Check if user already exists
-    const existingUser = await this.userService.findByWallet(walletAddress);
+    const existingUser = await this.userService.findByWallet(
+      walletAddress,
+      dto.role,
+    );
     if (existingUser) {
       throw new ConflictException('Wallet address already registered');
     }
@@ -38,20 +46,20 @@ export class AuthService {
     const user = await this.userService.create({
       walletAddress,
       role: dto.role,
-      nickname: dto.nickname,
+      investorData: dto.investorData,
       startupData: dto.startupData,
     });
 
     // Generate initial nonce
-    user.nonce = (await this.generateNonce(walletAddress)).nonce;
+    user.nonce = (await this.generateNonce(walletAddress, dto.role)).nonce;
 
     return { user };
   }
 
   async login(dto: LoginDto) {
-    const walletAddress = dto.walletAddress.toLowerCase();
+    const { walletAddress, role } = dto;
 
-    const user = await this.userService.findByWallet(walletAddress);
+    const user = await this.userService.findByWallet(walletAddress, role);
     if (!user) {
       throw new UnauthorizedException('User not found. Please register first.');
     }
@@ -64,12 +72,12 @@ export class AuthService {
     // Verify the signature
     const recoveredAddress = ethers.verifyMessage(nonce, dto.signature);
 
-    if (recoveredAddress.toLowerCase() !== walletAddress) {
+    if (recoveredAddress.toLowerCase() !== walletAddress.toLowerCase()) {
       throw new UnauthorizedException('Invalid signature');
     }
 
     // Generate a new nonce for next login
-    await this.generateNonce(walletAddress);
+    await this.generateNonce(walletAddress, dto.role);
 
     // Generate JWT token
     const payload = {

@@ -19,28 +19,62 @@ export class UserService {
     @InjectModel(Startup.name) private startupModel: Model<Startup>,
   ) {}
 
-  async findByWallet(walletAddress: string): Promise<UserDocument | null> {
-    return this.userModel.findOne({
-      walletAddress: walletAddress.toLowerCase(),
-    });
+  async findByWallet(
+    walletAddress: string,
+    role?: Roles,
+  ): Promise<UserDocument | null> {
+    switch (role) {
+      case Roles.INVESTOR:
+        return this.investorModel.findOne({
+          walletAddress: walletAddress.toLowerCase(),
+        });
+      case Roles.STARTUP:
+        return this.startupModel.findOne({
+          walletAddress: walletAddress.toLowerCase(),
+        });
+      default:
+        return this.userModel.findOne({
+          walletAddress: walletAddress.toLowerCase(),
+        });
+    }
   }
 
-  async updateNonce(walletAddress: string, nonce: string) {
-    return this.userModel.updateOne(
-      { walletAddress: walletAddress.toLowerCase() },
-      { nonce },
-      { upsert: false },
-    );
+  async updateNonce(walletAddress: string, nonce: string, role?: Roles) {
+    switch (role) {
+      case Roles.INVESTOR:
+        return this.investorModel.updateOne(
+          { walletAddress: walletAddress.toLowerCase() },
+          { nonce },
+          { upsert: false },
+        );
+      case Roles.STARTUP:
+        return this.userModel.updateOne(
+          { walletAddress: walletAddress.toLowerCase() },
+          { nonce },
+          { upsert: false },
+        );
+      default:
+        return this.userModel.updateOne(
+          { walletAddress: walletAddress.toLowerCase() },
+          { nonce },
+          { upsert: false },
+        );
+    }
   }
 
   async create(data: CreateUserDto): Promise<UserDocument> {
     const walletAddress = data.walletAddress.toLowerCase();
 
     if (data.role === Roles.INVESTOR) {
+      if (!data.investorData) {
+        throw new Error('Investor data is required for investor registration');
+      }
+
       return new this.investorModel({
         walletAddress,
         role: Roles.INVESTOR,
-        nickname: data.nickname,
+        name: data.investorData.name,
+        nickname: data.investorData.nickname,
       }).save();
     }
 
@@ -56,7 +90,7 @@ export class UserService {
         location: data.startupData.location,
         website: data.startupData.website,
         bio: data.startupData.bio,
-        missionGoals: data.startupData.mission,
+        motives: data.startupData.mission,
       }).save();
     }
 

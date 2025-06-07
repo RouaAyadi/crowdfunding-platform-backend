@@ -2,32 +2,7 @@ import { IsString, IsEnum, IsOptional, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Roles } from '../roles.enum';
-
-export class StartupDataDto {
-  @ApiProperty({ description: 'Name of the startup' })
-  @IsString()
-  name: string;
-
-  @ApiProperty({ description: 'Location of the startup' })
-  @IsString()
-  location: string;
-
-  @ApiPropertyOptional({ description: 'Website URL of the startup' })
-  @IsString()
-  @IsOptional()
-  website?: string;
-
-  @ApiProperty({ description: 'Bio/description of the startup' })
-  @IsString()
-  bio: string;
-
-  @ApiProperty({
-    description: 'Mission and goals of the startup',
-    type: [String],
-  })
-  @IsString({ each: true })
-  mission: string[];
-}
+import { InvestorDataDto, StartupDataDto } from './create-user.dto';
 
 export class RegisterDto {
   @ApiProperty({
@@ -46,12 +21,13 @@ export class RegisterDto {
   role: Roles;
 
   @ApiPropertyOptional({
-    description: 'Optional nickname for the user',
-    example: 'crypto_whale',
+    description: 'Required only when registering as an investor',
+    type: InvestorDataDto,
   })
-  @IsString()
+  @ValidateNested()
+  @Type(() => InvestorDataDto)
   @IsOptional()
-  nickname?: string;
+  investorData?: InvestorDataDto;
 
   @ApiPropertyOptional({
     description: 'Required only when registering as a startup',
@@ -72,8 +48,16 @@ export class LoginDto {
   walletAddress: string;
 
   @ApiProperty({
+    description: 'User role (investor or startup)',
+    enum: Roles,
+    example: Roles.INVESTOR,
+  })
+  @IsEnum(Roles)
+  role: Roles;
+
+  @ApiProperty({
     description: 'Signature of the nonce message',
-    example: '0x...',
+    example: '0x1234...5678',
   })
   @IsString()
   signature: string;

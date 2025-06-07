@@ -9,7 +9,7 @@ const rl = readline.createInterface({
 });
 
 const PRIVATE_KEY =
-  '0x745242fae5ef62eed71ac91cfcaaea9f866b8140787843af0abf8d4ebfeb7e45';
+  '0x745242fae5ef62eed71ac91cfcaaea9f866b8140787843af0abf8d4ebfeb7a45';
 // 0x0000000000000000000000000000000000000007ffffffffffffffffffffffff
 // 0xb361acc614e4d65c6ba1018bb010c81e7d937f0e4274567d46874c15664ace95
 
