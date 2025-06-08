@@ -6,6 +6,7 @@ import { AuthModule } from './auth/auth.module';
 import { StartupModule } from './startup/startup.module';
 import { CampaignModule } from './campaign/campaign.module';
 import { InvestorModule } from './investor/investor.module';
+import { BlockchainModule } from './blockchain/blockchain.module';
 declare const process: any;
 import * as dotenv from 'dotenv';
 import { ConfigModule } from '@nestjs/config';
@@ -21,6 +22,7 @@ dotenv.config();
     StartupModule,
     CampaignModule,
     InvestorModule,
+    BlockchainModule,
   ],
   controllers: [AppController],
   providers: [AppService],
